@@ -7,7 +7,7 @@ const state = {
   puzzleSelections: [] // tracks selected node indices for puzzle questions
 };
 
-// 7 Questions Database (shuffled correctness, no Wegovy/SGLT2)
+// 7 Questions Database (shuffled correctness, no Wegovy/SGLT2, removed key icon)
 const questionsData = [
   {
     indexLabel: "דלת 1: חזון הרמב\"ם (המאה ה-12)",
@@ -20,7 +20,7 @@ const questionsData = [
         explanation: "לא נכון. הרמב\"ם מתאר מציאות של שפע רב וקלות מציאת פרנסה, ולא רעב או מחסור."
       },
       {
-        answer: "\"באותם הימים יהיה נקל מאד על בני האדם למצוא מחיתם, עד שבעמל מעט שיעמול האדם – יגיע לתועלת גדולה... ויארכו חיי בני האדם גם כן\" 🗝️",
+        answer: "\"באותם הימים יהיה נקל מאד על בני האדם למצוא מחיתם, עד שבעמל מעט שיעמול האדם – יגיע לתועלת גדולה... ויארכו חיי בני האדם גם כן\"",
         correct: true,
         explanation: "נכון מאוד! זהו הניסוח המדויק המופיע במצגת (הלכות מלכים ומלחמותיהם, פרק י\"ב, הלכה ה')."
       },
@@ -37,7 +37,7 @@ const questionsData = [
     question: "מהו הלקח הפילוסופי-הלכתי של משל \"הגולם מפראג\" של המהר\"ל לגבי פיתוח בינה מלאכותית (AI) ללא רוח או אמפתיה?",
     doors: [
       {
-        answer: "הגולם מראה כיצד כלי שנוצר מתוך כוונות טובות להגנה, אך בהיעדר מהות ונשמה אנושית מפתח התנהגות הרסנית וקם על יוצרו 🗝️",
+        answer: "הגולם מראה כיצד כלי שנוצר מתוך כוונות טובות להגנה, אך בהיעדר מהות ונשמה אנושית מפתח התנהגות הרסנית וקם על יוצרו",
         correct: true,
         explanation: "נכון מאוד! סכנת בינה מלאכותית חסרת רגישות אנושית, הפועלת ללא פיקוח מוסרי."
       },
@@ -69,7 +69,7 @@ const questionsData = [
         explanation: "לא נכון. הטעות היא חוסר ההבנה שטכנולוגיה חדשה (מנוע) יכולה להחליף לחלוטין את העובד (הסוס) ולא רק לעזור לו."
       },
       {
-        answer: "ההנחה שכלים חדשים רק משפרים את פריון השריר, בעוד ה-AI מחליף את המוח האנושי כפי שהמנוע החליף כליל את הסוסים והביא לצניחתם 🗝️",
+        answer: "ההנחה שכלים חדשים רק משפרים את פריון השריר, בעוד ה-AI מחליף את המוח האנושי כפי שהמנוע החליף כליל את הסוסים והביא לצניחתם",
         correct: true,
         explanation: "נכון מאוד! ה-AI הוא מהפכה קוגניטיבית המיועדת להחליף את המוח ולא רק לשפר את השריר."
       }
@@ -86,7 +86,7 @@ const questionsData = [
         explanation: "לא נכון. מקצועות הטיפול והמגע הפיזי (כמו סיעוד) הם העמידים ביותר בפני החלפה."
       },
       {
-        answer: "הוא מדרג מקצועות לפי רמת חפיפת המשימות השגרתיות והקוגניטיביות שלהם מול יכולות הבינה היוצרת 🗝️",
+        answer: "הוא מדרג מקצועות לפי רמת חפיפת המשימות השגרתיות והקוגניטיביות שלהם מול יכולות הבינה היוצרת",
         correct: true,
         explanation: "נכון מאוד! המדד מנתח אילו משימות משרדיות ותבוניות יכולות להתבצע ישירות על ידי AI."
       },
@@ -103,7 +103,7 @@ const questionsData = [
     question: "על רקע עלייה באיומי סייבר ביוני 2026, מהי ההנחיה המיידית של משרד הבריאות לגבי שימוש ב-AI?",
     doors: [
       {
-        answer: "חסימה מוחלטת של גישה לכלי AI חיצוניים ממחשבי בתי החולים הממשלתיים, והגבלת השימוש למכשירים אישיים בלבד 🗝️",
+        answer: "חסימה מוחלטת של גישה לכלי AI חיצוניים ממחשבי בתי החולים הממשלתיים, והגבלת השימוש למכשירים אישיים בלבד",
         correct: true,
         explanation: "נכון מאוד! הנחיית החירום באה למנוע זליגת מידע רגיש ופרצות אבטחה ברשתות בתי החולים."
       },
@@ -122,7 +122,7 @@ const questionsData = [
   {
     indexLabel: "דלת 6: פרוטוקול הפרומפט הקליני המובנה",
     type: "puzzle",
-    question: "אתגר שער הבקרה: בחרי את 4 המרכיבים ההכרחיים (לפי חוקי הפרומפטולוגיה הקלינית) לבניית פנייה ביקורתית ומובנית ל-AI:",
+    question: "אתגר שער הבקרה: בחרו את 4 המרכיבים ההכרחיים (לפי חוקי הפרומפטולוגיה הקלינית) לבניית פנייה ביקורתית ומובנית ל-AI:",
     nodes: [
       { name: "הגדרת תפקיד המערכת (Role)", correct: true },
       { name: "הגדרת המשימה הקלינית (Task)", correct: true },
@@ -133,12 +133,12 @@ const questionsData = [
     ],
     requiredCount: 4,
     feedbackSuccess: "קוד הפרומפט זוהה! ROLE, TASK, CONTEXT, FORMAT - שילוב מנצח ללא הפרת חיסיון המטופל. השער נפתח!",
-    feedbackFail: "קוד שגוי. הזנת פרטים מזהים מפרה חיסיון, וברכות נימוסין אינן רכיב הכרחי ליציבות הפלט. נסי שוב!"
+    feedbackFail: "קוד שגוי. הזנת פרטים מזהים מפרה חיסיון, וברכות נימוסין אינן רכיב הכרחי ליציבות הפלט. נסו שוב!"
   },
   {
     indexLabel: "דלת 7: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
     type: "puzzle",
-    question: "אתגר שער הכספת: בחרי את 3 הפעולות הבטוחות המהוות את קו ההגנה האחרון של האדם (Human-in-the-Loop) בעבודה עם AI:",
+    question: "אתגר שער הכספת: בחרו את 3 הפעולות הבטוחות המהוות את קו ההגנה האחרון של האדם (Human-in-the-Loop) בעבודה עם AI:",
     nodes: [
       { name: "ביצוע הצלבת מידע ותיקוף המלצות מול נהלים רשמיים וספרות מבוססת ראיות", correct: true },
       { name: "שמירה קפדנית על חיסיון מטופלים והזנת תיאורים כלליים בלבד", correct: true },
@@ -147,8 +147,8 @@ const questionsData = [
       { name: "העתקה והדבקה ישירה של פלטי AI לתיק המטופל ללא קריאה או בקרה", correct: false }
     ],
     requiredCount: 3,
-    feedbackSuccess: "הכספת נפתחה! ניווטת בהצלחה בכל שערי הבקרה, האתיקה וההלכה בעידן ה-AI!",
-    feedbackFail: "מערכת נעולה. זכרי כי הסתמכות עיוורת או העתקה ישירה ללא בקרה מפרה את עקרונות הבטיחות והאחריות. נסי שוב!"
+    feedbackSuccess: "הכספת נפתחה! ניווטתם בהצלחה בכל שערי הבקרה, האתיקה וההלכה בעידן ה-AI!",
+    feedbackFail: "מערכת נעולה. זכרו כי הסתמכות עיוורת או העתקה ישירה ללא בקרה מפרה את עקרונות הבטיחות והאחריות. נסו שוב!"
   }
 ];
 
@@ -415,7 +415,7 @@ function setupEventListeners() {
           buttons.forEach(btn => btn.className = 'puzzle-node-btn');
           state.puzzleSelections = [];
           elements.feedbackPanel.className = 'feedback-panel idles';
-          elements.feedbackText.innerText = `נבחרו 0 מתוך ${qData.requiredCount} רכיבים. בחרי את הרכיבים הנכונים ולחצי "אמת קוד".`;
+          elements.feedbackText.innerText = `נבחרו 0 מתוך ${qData.requiredCount} רכיבים. בחרו את הרכיבים הנכונים ולחצו "אמת קוד".`;
         }, 2200);
       }
     }
@@ -514,7 +514,7 @@ function loadQuestion(index) {
   elements.feedbackPanel.className = 'feedback-panel idles';
   
   if (qData.type === 'doors') {
-    elements.feedbackText.innerText = "בחר בדלת בעלת התשובה הנכונה ביותר...";
+    elements.feedbackText.innerText = "בחרו בדלת בעלת התשובה הנכונה ביותר...";
     elements.feedbackActionArea.classList.add('hidden');
     
     // Render doors
@@ -541,7 +541,7 @@ function loadQuestion(index) {
       elements.doorsContainer.appendChild(container);
     });
   } else if (qData.type === 'puzzle') {
-    elements.feedbackText.innerText = `נבחרו 0 מתוך ${qData.requiredCount} רכיבים. בחרי את הרכיבים הנכונים ולחצי "אמת קוד".`;
+    elements.feedbackText.innerText = `נבחרו 0 מתוך ${qData.requiredCount} רכיבים. בחרו את הרכיבים הנכונים ולחצו "אמת קוד".`;
     elements.feedbackActionArea.classList.remove('hidden');
     elements.btnNextQuestion.innerText = 'אמת קוד ➡️';
     
@@ -551,7 +551,7 @@ function loadQuestion(index) {
     const board = document.createElement('div');
     board.className = 'puzzle-board-container';
     board.innerHTML = `
-      <div class="puzzle-board-header">מערכת קוד בקרה - בחרי את הרכיבים הנכונים</div>
+      <div class="puzzle-board-header">מערכת קוד בקרה - בחרו את הרכיבים הנכונים</div>
       <div class="puzzle-grid" id="puzzle-grid-nodes"></div>
     `;
     elements.doorsContainer.appendChild(board);
@@ -587,7 +587,7 @@ function handleDoorSelection(doorIdx, doorData) {
   playSound('click');
   
   elements.feedbackPanel.className = 'feedback-panel idles';
-  elements.feedbackText.innerText = 'דלת נבחרה. לחץ \"לפתח את הדלת\" כדי לפתוח אותה ולהתקדם.';
+  elements.feedbackText.innerText = 'דלת נבחרה. לחצו \"לפתח את הדלת\" כדי לפתוח אותה ולהתקדם.';
   elements.feedbackActionArea.classList.remove('hidden');
   elements.btnNextQuestion.innerText = 'לפתח את הדלת ➡️';
 }
@@ -605,7 +605,7 @@ function handleNodeSelection(btn, nodeIdx, qData) {
   }
   
   elements.feedbackPanel.className = 'feedback-panel idles';
-  elements.feedbackText.innerText = `נבחרו ${state.puzzleSelections.length} מתוך ${qData.requiredCount} רכיבים. בחרי את הרכיבים הנכונים ולחצי "אמת קוד".`;
+  elements.feedbackText.innerText = `נבחרו ${state.puzzleSelections.length} מתוך ${qData.requiredCount} רכיבים. בחרו את הרכיבים הנכונים ולחצו "אמת קוד".`;
 }
 
 // Auto start
