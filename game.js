@@ -1,726 +1,401 @@
-// Audio Context for sound synthesis (Web Audio API)
-class AudioSynth {
-  constructor() {
-    this.ctx = null;
-  }
+// Game State
+const state = {
+  currentQuestionIndex: 0,
+  soundEnabled: true,
+  selections: new Array(8).fill(null), // tracks chosen door index (0, 1, 2) for each question
+  activeSelectionActive: true,
+  puzzleSelections: [] // tracks selected node indices for puzzle questions
+};
 
-  init() {
-    if (!this.ctx) {
-      this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    }
-  }
-
-  playClick() {
-    this.init();
-    if (!this.ctx) return;
-    let osc = this.ctx.createOscillator();
-    let gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(450, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(150, this.ctx.currentTime + 0.08);
-    gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.005, this.ctx.currentTime + 0.08);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.08);
-  }
-
-  playSuccess() {
-    this.init();
-    if (!this.ctx) return;
-    let now = this.ctx.currentTime;
-    let notes = [261.63, 329.63, 392.00, 523.25]; // C4, E4, G4, C5 chord
-    notes.forEach((freq, i) => {
-      let o = this.ctx.createOscillator();
-      let g = this.ctx.createGain();
-      o.type = 'triangle';
-      o.frequency.setValueAtTime(freq, now + i * 0.08);
-      g.gain.setValueAtTime(0.08, now + i * 0.08);
-      g.gain.exponentialRampToValueAtTime(0.001, now + i * 0.08 + 0.3);
-      o.connect(g);
-      g.connect(this.ctx.destination);
-      o.start(now + i * 0.08);
-      o.stop(now + i * 0.08 + 0.35);
-    });
-  }
-
-  playDanger() {
-    this.init();
-    if (!this.ctx) return;
-    let osc = this.ctx.createOscillator();
-    let gain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(150, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(90, this.ctx.currentTime + 0.25);
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.005, this.ctx.currentTime + 0.25);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.25);
-  }
-
-  playFailure() {
-    this.init();
-    if (!this.ctx) return;
-    let osc = this.ctx.createOscillator();
-    let gain = this.ctx.createGain();
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(220, this.ctx.currentTime);
-    osc.frequency.linearRampToValueAtTime(80, this.ctx.currentTime + 0.6);
-    gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.6);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.6);
-  }
-
-  playUnlock() {
-    this.init();
-    if (!this.ctx) return;
-    let osc = this.ctx.createOscillator();
-    let gain = this.ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.setValueAtTime(600, this.ctx.currentTime);
-    osc.frequency.exponentialRampToValueAtTime(1800, this.ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.12, this.ctx.currentTime);
-    gain.gain.linearRampToValueAtTime(0.005, this.ctx.currentTime + 0.3);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.3);
-  }
-
-  playClack() {
-    this.init();
-    if (!this.ctx) return;
-    let osc = this.ctx.createOscillator();
-    let gain = this.ctx.createGain();
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(1100, this.ctx.currentTime);
-    gain.gain.setValueAtTime(0.02, this.ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + 0.02);
-    osc.connect(gain);
-    gain.connect(this.ctx.destination);
-    osc.start();
-    osc.stop(this.ctx.currentTime + 0.025);
-  }
-}
-
-const synth = new AudioSynth();
-
-// EKG Monitor Live Canvas Drawing
-class EKGMonitor {
-  constructor(canvasId) {
-    this.canvas = document.getElementById(canvasId);
-    this.ctx = this.canvas.getContext('2d');
-    this.points = [];
-    this.x = 0;
-    this.animationId = null;
-    this.speed = 2;
-    this.heartRate = 72;
-    this.pulseTimer = 0;
-    this.isDead = false;
-    
-    this.resize();
-    window.addEventListener('resize', () => this.resize());
-  }
-
-  resize() {
-    if (this.canvas) {
-      const rect = this.canvas.parentNode.getBoundingClientRect();
-      this.canvas.width = rect.width;
-      this.canvas.height = rect.height;
-    }
-  }
-
-  setHeartRate(hr) {
-    this.heartRate = hr;
-  }
-
-  setDead(isDead) {
-    this.isDead = isDead;
-    if (isDead) this.heartRate = 0;
-  }
-
-  start() {
-    const draw = () => {
-      this.ctx.fillStyle = 'rgba(4, 5, 13, 0.15)';
-      this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
-      
-      this.ctx.strokeStyle = 'rgba(0, 229, 255, 0.015)';
-      this.ctx.lineWidth = 1;
-      for (let i = 0; i < this.canvas.width; i += 20) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(i, 0);
-        this.ctx.lineTo(i, this.canvas.height);
-        this.ctx.stroke();
-      }
-      for (let j = 0; j < this.canvas.height; j += 20) {
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, j);
-        this.ctx.lineTo(this.canvas.width, j);
-        this.ctx.stroke();
-      }
-
-      this.ctx.beginPath();
-      this.ctx.strokeStyle = this.isDead ? 'rgba(255, 23, 68, 0.85)' : 'rgba(0, 229, 255, 0.85)';
-      this.ctx.lineWidth = 2.5;
-      this.ctx.shadowBlur = 6;
-      this.ctx.shadowColor = this.isDead ? 'rgba(255, 23, 68, 0.4)' : 'rgba(0, 229, 255, 0.4)';
-      
-      let cy = this.canvas.height / 2;
-      this.pulseTimer += this.isDead ? 0 : (this.heartRate / 60) * 0.07;
-      let wave = 0;
-      
-      if (!this.isDead) {
-        let t = this.pulseTimer % Math.PI;
-        if (t < 0.2) {
-          wave = Math.sin(t * Math.PI / 0.2) * 3;
-        } else if (t >= 0.2 && t < 0.3) {
-          wave = -Math.sin((t - 0.2) * Math.PI / 0.1) * 2;
-        } else if (t >= 0.3 && t < 0.45) {
-          wave = Math.sin((t - 0.3) * Math.PI / 0.15) * 28;
-        } else if (t >= 0.45 && t < 0.55) {
-          wave = -Math.sin((t - 0.45) * Math.PI / 0.1) * 10;
-        } else if (t >= 0.55 && t < 0.8) {
-          wave = Math.sin((t - 0.55) * Math.PI / 0.25) * 5;
-        } else {
-          wave = 0;
-        }
-      } else {
-        wave = (Math.random() - 0.5) * 0.6;
-      }
-      
-      let py = cy - wave;
-      this.points.push({ x: this.x, y: py });
-      if (this.points.length > this.canvas.width / this.speed) {
-        this.points.shift();
-      }
-      
-      for (let i = 0; i < this.points.length; i++) {
-        let p = this.points[i];
-        let drawX = (p.x - this.x) + this.canvas.width - 20;
-        if (i === 0) {
-          this.ctx.moveTo(drawX, p.y);
-        } else {
-          this.ctx.lineTo(drawX, p.y);
-        }
-      }
-      this.ctx.stroke();
-      this.ctx.shadowBlur = 0;
-      
-      this.x += this.speed;
-      this.animationId = requestAnimationFrame(draw);
-    };
-    
-    draw();
-  }
-
-  stop() {
-    if (this.animationId) {
-      cancelAnimationFrame(this.animationId);
-    }
-  }
-}
-
-// 8 Scenario Questions Database
+// 8 Questions Database
 const questionsData = [
   {
-    indexLabel: "דלת 1: חזון הרמב\"ם והגולם מפראג",
-    slide: "slide29.png",
+    indexLabel: "דלת 1: חזון הרמב\"ם (המאה ה-12)",
     type: "doors",
-    question: "בהרצאה הוזכר חזון האוטומציה של הרמב\"ם (המאה ה-12) מול משל 'הגולם מפראג' (המאה ה-16). מהו הלקח המרכזי משילוב שני הרעיונות הללו לגבי שימוש ב-AI ברפואה?",
+    question: "כיצד מתאר הרמב\"ם בספרו \"משנה תורה\" את תקופת ימות המשיח המאפיינת את חזון האוטומציה והשפע?",
     doors: [
       {
-        answer: "ה-AI צריך להחליף לחלוטין את הצוות הסיעודי כדי להגיע לאוטופיה של הרמב\"ם.",
-        correct: false,
-        explanation: "לא, הרמב\"ם חזה הקלה בעמל האדם, אך משל הגולם מלמד אותנו שאין לוותר על המרכיב האנושי."
-      },
-      {
-        answer: "יש להשתמש באוטומציה להפחתת עמל האדם (הרמב\"ם), אך להיזהר מיצירת כלי מורכב ללא נשמה ואמפתיה (הגולם) שעלול להזיק. 🗝️",
+        answer: "\"באותם הימים יהיה נקל מאד על בני האדם למצוא מחיתם, עד שבעמל מעט שיעמול האדם – יגיע לתועלת גדולה... ויארכו חיי בני האדם גם כן\" 🗝️",
         correct: true,
-        explanation: "נכון מאוד! שילוב של קדמה טכנולוגית מקילה (הרמב\"ם) עם מודעות ופיקוח אתי מבוסס נשמה ואנושיות (הגולם)."
+        explanation: "נכון מאוד! זהו הניסוח המדויק המופיע במצגת (הלכות מלכים ומלחמותיהם, פרק י\"ב, הלכה ה')."
       },
       {
-        answer: "ההלכה אוסרת לחלוטין על שימוש בטכנולוגיות המדמות תבונה אנושית או יוצרות אוטומציה.",
+        answer: "\"יהיה רעב ומחסור גדול בארץ, ובני האדם יצטרכו לעמול בפרך מבוקר עד ערב כדי למצוא פת לחם ומחיה לבתיהם\"",
         correct: false,
-        explanation: "לא נכון, מחשבת ההלכה מעודדת רפואה וקדמה כל עוד הן שומרות על ערך החיים ומונעות סבל."
+        explanation: "לא נכון. הרמב\"ם מתאר מציאות של שפע רב וקלות מציאת פרנסה, ולא רעב או מחסור."
+      },
+      {
+        answer: "\"יהיה עידן שבו כל המחלות ייעלמו כליל ולא יהיה עוד צורך ברופאים ובאחיות, והעולם יתנהל על ידי אוטומטים חכמים בלבד\"",
+        correct: false,
+        explanation: "לא נכון. הרמב\"ם לא עוסק באוטומטים אלא בשפע כלכלי ובקלות השגת המחיה שתפנה את בני האדם לחוכמה."
       }
-    ],
-    bridgeTitle: "הגשר למושב הבא ב-10:10:",
-    bridgeText: "בחירה זו מובילה אותנו ישירות למושב הבא: **סיעוד דיגיטלי חכם - AI**."
+    ]
   },
   {
-    indexLabel: "דלת 2: טעות הסוסים ומדד האפליקביליות",
-    slide: "slide9.png",
+    indexLabel: "דלת 2: משל הגולם מפראג (המאה ה-16)",
     type: "doors",
-    question: "מהי 'טעות הסוסים' (1900) וכיצד היא מתקשרת לדו\"ח מיקרוסופט (אוגוסט 2025) על שוק העבודה בעידן ה-AI?",
+    question: "מהו הלקח הפילוסופי-הלכתי של משל \"הגולם מפראג\" של המהר\"ל לגבי פיתוח בינה מלאכותית (AI) ללא רוח או אמפתיה?",
     doors: [
       {
-        answer: "ה-AI משפר את פריון השריר האנושי בלבד, כפי שהמנוע עשה לסוסים בעבר.",
-        correct: false,
-        explanation: "לא, המנוע החליף את השריר, בעוד ה-AI מחליף את המוח והחשיבה."
-      },
-      {
-        answer: "ה-AI מחליף את המוח והשפה האנושית (כפי שהמנוע החליף את השריר של הסוסים), ומאפשר אוטומציה דווקא של מקצועות מבוססי מידע וצווארון לבן. 🗝️",
+        answer: "הגולם מראה כיצד כלי שנוצר מתוך כוונות טובות להגנה, אך בהיעדר מהות ונשמה אנושית מפתח התנהגות הרסנית וקם על יוצרו 🗝️",
         correct: true,
-        explanation: "נכון מאוד! ה-AI הוא מהפכת פריון המוח והמידע, ולכן פוגע קודם כל במקצועות מבוססי טקסט ותכנון."
+        explanation: "נכון מאוד! סכנת בינה מלאכותית חסרת רגישות אנושית, הפועלת ללא פיקוח מוסרי."
       },
       {
-        answer: "ה-AI פוגע בעיקר במקצועות פיזיים של צווארון כחול ומחליף את המגע הידני של האחות.",
+        answer: "הגולם מלמד כי טכנולוגיה ואוטומציה תבונית יכולות להחליף את הרגש והנשמה האנושית בצורה מושלמת ובטוחה",
         correct: false,
-        explanation: "לא נכון, מקצועות הדורשים תנועה ומגע פיזי מורכב הם העמידים ביותר בפני אוטומציה."
+        explanation: "לא נכון. המשל בא להזהיר בדיוק מפני פיתוח כזה, שבו יציר הכפיים קם על יוצרו בהיעדר נשמה."
+      },
+      {
+        answer: "הגולם הוא אוטומט מושלם שאין בו שום סיכון, והוא מעיד על יכולת האדם לברוא מחשב חף מטעויות",
+        correct: false,
+        explanation: "לא נכון. הגולם יצא מכלל שליטה והיה צורך לכבותו (מחיקת האות א' מ-'אמת' להשארת 'מת')."
       }
-    ],
-    bridgeTitle: "הגשר למושב הבא ב-11:20:",
-    bridgeText: "הבנת מהפכת ה-AI קוגניטיבית מעבירה אותנו למושב הבא: **הלכה למעשה בטיפול הרפואי**."
+    ]
   },
   {
-    indexLabel: "דלת 3: היפוך פירמידת הסיכון ועמידות הסיעוד",
-    slide: "slide64.png",
+    indexLabel: "דלת 3: טעות הסוסים (שנת 1900)",
     type: "doors",
-    question: "על פי תובנות הכנס, מדוע מקצוע הסיעוד מוגדר ברמת סיכון אפסית להחלפה על ידי AI בטווח הנראה לעין?",
+    question: "מהי \"טעות הסוסים\" בהיסטוריה של המהפכות הטכנולוגיות וכיצד היא מתקשרת למהפכת ה-AI?",
     doors: [
       {
-        answer: "כי אחיות זקוקות לשילוב של נוכחות פיזית, שיפוט קליני דינמי, ניהול סיכונים בזמן אמת, מגע אנושי ואמפתיה. 🗝️",
+        answer: "ההנחה שכלים חדשים רק משפרים את פריון השריר, בעוד ה-AI מחליף את המוח האנושי כפי שהמנוע החליף כליל את הסוסים והביא לצניחתם 🗝️",
         correct: true,
-        explanation: "נכון מאוד! הליבה הסיעודית משלבת פיזיות ורגש שלא ניתנים לשכפול אלגוריתמי כיום."
+        explanation: "נכון מאוד! ה-AI הוא מהפכה קוגניטיבית המיועדת להחליף את המוח ולא רק לשפר את השריר."
       },
       {
-        answer: "כי העבודה הסיעודית מיושנת ואינה כוללת משימות משרדיות או שימוש במחשבים.",
+        answer: "ההערכה השגויה לגבי מספר הסוסים שיידרשו להובלת משאות בערים בעקבות המצאת הרכבת והמכונית",
         correct: false,
-        explanation: "לא נכון, האחות עוברת מ'אחות מבצעת' ל'מנהלת מערכת חכמה' (Orchestrator) המשלבת מחשוב רב."
+        explanation: "לא נכון. הטעות היא חוסר ההבנה שטכנולוגיה חדשה (מנוע) יכולה להחליף לחלוטין את העובד (הסוס) ולא רק לעזור לו."
       },
       {
-        answer: "כי ה-AI אינו מסוגל לאבחן מחלות או לתת המלצות תרופתיות כלל.",
+        answer: "האמונה כי סוסים מהירים יותר ממנועים ראשוניים, מה שעיכב את כניסת המהפכה התעשייתית לתחבורה",
         correct: false,
-        explanation: "לא מדויק, ה-AI מנבא ומאבחן בדיוק רב, אך חסר לו הממד הטיפולי-פיזי והליווי האנושי."
+        explanation: "לא נכון. זהו משל הממחיש את סכנת החלפת כוח העבודה האנושי (המוח) על ידי המחשב."
       }
-    ],
-    bridgeTitle: "הגשר למושב הבא ב-12:10:",
-    bridgeText: "חוזק המקצוע מאפשר לנו להוביל את המושב הבא: **קבלת החלטות אתיות ותומכות החלטה**."
+    ]
   },
   {
-    indexLabel: "דלת 4: מציאות קלינית וחסימת הכלים בישראל",
-    slide: "slide70.png",
+    indexLabel: "דלת 4: מהפכת 2025 ודו\"ח מיקרוסופט",
     type: "doors",
-    question: "בסוף יוני 2026 הורה משרד הבריאות על חסימה מוחלטת של גישה לכלי AI חיצוניים ממחשבי בתי החולים עקב איומי סייבר. כיצד על האחיות לפעול?",
+    question: "על פי דו\"ח מיקרוסופט (Working with AI, אוגוסט 2025), כיצד מדרג מדד ה-AI Applicability Score את מקצועות שוק העבודה?",
     doors: [
       {
-        answer: "להפסיק שימוש בטכנולוגיות עזר לחלוטין ולחזור לתיעוד ידני בניירות בלבד.",
-        correct: false,
-        explanation: "זה עלול לעכב את הטיפול ולפגוע ביעילות ובבטיחות המטופלים במחלקה."
-      },
-      {
-        answer: "להיעזר ב-AI תומך החלטה דרך מכשירים אישיים בלבד, תחת נהלי אבטחה מחמירים וללא הזנת פרטים מזהים של מטופלים. 🗝️",
+        answer: "הוא מדרג מקצועות לפי רמת חפיפת המשימות השגרתיות והקוגניטיביות שלהם מול יכולות הבינה היוצרת 🗝️",
         correct: true,
-        explanation: "נכון מאוד! הגנה על סייבר וחיסיון המטופל תוך שימוש מושכל בכלים מחוץ לרשת הבית-חולימית המאובטחת."
+        explanation: "נכון מאוד! המדד מנתח אילו משימות משרדיות ותבוניות יכולות להתבצע ישירות על ידי AI."
       },
       {
-        answer: "להשתמש ברשתות VPN לא מאושרות במחשבי המשרד כדי לעקוף את החסימה.",
+        answer: "הוא מדרג מקצועות על בסיס רמת המאמץ הפיזי והפעילות הידנית הנדרשת מהעובדים במפעלים",
         correct: false,
-        explanation: "זוהי עבירת אבטחה חמורה ביותר שעלולה לחשוף את בית החולים למתקפות כופר קריטיות."
+        explanation: "לא נכון. הדו\"ח מתמקד בקופיילוט וביכולות קוגניטיביות המבוצעות מול מסך."
+      },
+      {
+        answer: "הוא קובע כי מקצועות הסיעוד והטיפול הפיזי נמצאים בסיכון הגבוה ביותר להחלפה מלאה בתוך שנה",
+        correct: false,
+        explanation: "לא נכון. מקצועות הטיפול והמגע הפיזי (כמו סיעוד) הם העמידים ביותר בפני החלפה."
       }
-    ],
-    bridgeTitle: "הגשר למושב הבא:",
-    bridgeText: "הצורך באבטחה ודיוק מוביל אותנו לבחינת כלי ה-AI עצמם ודילמת המודלים..."
+    ]
   },
   {
-    indexLabel: "דלת 5: דילמת ריבוי המודלים והזיות AI",
-    slide: "slide142.png",
+    indexLabel: "דלת 5: סייבר ומערכת הבריאות בישראל (יוני 2026)",
     type: "doors",
-    question: "הרצת פרומפט וקיבלת המלצות טיפוליות סותרות משלושה מודלים שונים (Gemini, Claude, GPT). מהי הפעולה הקלינית הנכונה ביותר?",
+    question: "על רקע עלייה באיומי סייבר ביוני 2026, מהי ההנחיה המיידית של משרד הבריאות לגבי שימוש ב-AI?",
     doors: [
       {
-        answer: "לבחור במודל שמציע את הטיפול האגרסיבי והמהיר ביותר כדי למנוע הידרדרות.",
-        correct: false,
-        explanation: "לא, טיפול אגרסיבי ללא הצלבה עלול לגרום לתופעות לוואי קשות ולנזק מיותר למטופל."
-      },
-      {
-        answer: "להבין את סכנת ה'הזיות' של מודלים, ולבצע הצלבה ותיקוף של המלצות ה-AI מול ספרות מבוססת ראיות ונהלים רשמיים. 🗝️",
+        answer: "חסימה מוחלטת של גישה לכלי AI חיצוניים ממחשבי בתי החולים הממשלתיים, והגבלת השימוש למכשירים אישיים בלבד 🗝️",
         correct: true,
-        explanation: "נכון מאוד! הצלבת מידע מול נהלים מאושרים וספרות (כמו OpenEvidence) היא חובה מקצועית."
+        explanation: "נכון מאוד! הנחיית החירום באה למנוע זליגת מידע רגיש ופרצות אבטחה ברשתות בתי החולים."
       },
       {
-        answer: "לרשום בתיק הרפואי שה-AI המליץ על טיפול מסוים ובכך להעביר את האחריות למפתחים.",
+        answer: "פתיחת גישה מלאה ומהירה ללא סיסמה לכל מודלי השפה של Anthropic ו-OpenAI ממחשבי המחלקה",
         correct: false,
-        explanation: "חוקית ואתית לא ניתן להעביר אחריות למכונה. האחריות נותרת תמיד על איש הצוות האנושי."
+        explanation: "לא נכון. משרד הבריאות חסם את הכלים לחלוטין ברשתות הפנימיות בשל סיכוני אבטחת מידע."
+      },
+      {
+        answer: "איסור גורף על שימוש בבינה מלאכותית גם במכשירים אישיים לכלל הרופאים והאחיות בארץ",
+        correct: false,
+        explanation: "לא נכון. השימוש מותר במכשירים אישיים, אך חל איסור מוחלט להזין פרטים מזהים של מטופלים."
       }
-    ],
-    bridgeTitle: "הגשר לאתגר הדלת הבאה:",
-    bridgeText: "כעת, כדי להתקדם, עלייך לפתור חידת קוד לפתיחת הדלת האלקטרונית!"
+    ]
   },
   {
-    indexLabel: "דלת 6: אתגר הפרומפט הקליני המובנה",
-    slide: "slide103.png",
+    indexLabel: "דלת 6: פרוטוקול הפרומפט הקליני המובנה",
     type: "puzzle",
-    question: "אתגר הדלת האלקטרונית: כדי לפתוח את הדלת, בחרי בדיוק את 4 המרכיבים ההכרחיים של פרומפט קליני בטוח ומובנה (לפי חוקי הפרומפטולוגיה הקלינית שנלמדו):",
+    question: "אתגר שער הבקרה: בחרי את 4 המרכיבים ההכרחיים (לפי חוקי הפרומפטולוגיה הקלינית) לבניית פנייה ביקורתית ומובנית ל-AI:",
     nodes: [
       { name: "הגדרת תפקיד המערכת (Role)", correct: true },
       { name: "הגדרת המשימה הקלינית (Task)", correct: true },
       { name: "הקשר רפואי מלא ללא פרטים מזהים (Context)", correct: true },
       { name: "קביעת מבנה הפלט הרצוי (Format)", correct: true },
-      { name: "ברכת נימוסין ממושכת למודל", correct: false },
-      { name: "שם המטופל ומספר תעודת הזהות שלו", correct: false }
+      { name: "פרטים מזהים של המטופל (שם מלא, ת.ז)", correct: false },
+      { name: "ברכת נימוסין ממושכת למחשב", correct: false }
     ],
     requiredCount: 4,
-    feedbackSuccess: "קוד הפרומפט זוהה! הדלת נפתחה בהצלחה. ROLE, TASK, CONTEXT, FORMAT - שילוב מנצח ללא הפרת חיסיון המטופל.",
-    feedbackFail: "קוד שגוי. בחירת פרטים מזהים מפרה את חיסיון המטופל, וברכות נימוסין אינן מרכיב הכרחי ליציבות הפלט. נסי שוב!",
-    bridgeTitle: "הגשר למושב הבא ב-11:20:",
-    bridgeText: "כתיבת פרומפט נכון מביאה אותנו לדילמות הלכתיות מעשיות בקליניקה..."
+    feedbackSuccess: "קוד הפרומפט זוהה! ROLE, TASK, CONTEXT, FORMAT - שילוב מנצח ללא הפרת חיסיון המטופל. השער נפתח!",
+    feedbackFail: "קוד שגוי. הזנת פרטים מזהים מפרה חיסיון, וברכות נימוסין אינן רכיב הכרחי ליציבות הפלט. נסי שוב!"
   },
   {
     indexLabel: "דלת 7: פיקוח נפש, הלכה ו-Wegovy",
-    slide: "slide112.png",
     type: "doors",
-    question: "מטופל סוכרתי הנוטל מעכבי SGLT2 ו-Wegovy (Semaglutide - שקף 112) מעוניין לצום ביום כיפור. ה-AI מתריע על סכנת היפוגליקמיה. מהו הפרוטוקול הנכון?",
+    question: "מטופל סוכרתי המטופל במעכבי SGLT2 ו-Wegovy מעוניין לצום ביום כיפור. ה-AI מתריע על סכנת קטואצידוזיס. מהו הפרוטוקול ההלכתי-קליני הנכון?",
     doors: [
       {
-        answer: "הנחיה לצום כרגיל ללא שינוי, מתוך הנחה שהמצווה תגן עליו מנזק בריאותי קליני.",
-        correct: false,
-        explanation: "זהו סיכון חיים ממשי שאינו עולה בקנה אחד עם עקרון פיקוח נפש הדוחה צום."
-      },
-      {
-        answer: "תיאום הלכתי-קליני המבוסס על פיקוח נפש: שיתוף סמכות רבנית והתאמת המינונים או הנחיה לצום לשיעורין לפי המלצות איגוד האנדוקרינולוגיה. 🗝️",
+        answer: "תיאום הלכתי-קליני מבוסס פיקוח נפש, בשיתוף סמכות רבנית והנחיית איגוד האנדוקרינולוגיה (צום לשיעורין או השעיית תרופות זמנית) 🗝️",
         correct: true,
-        explanation: "נכון מאוד! שילוב של בטיחות קלינית (מניעת קטואצידוזיס והיפוגליקמיה) והנחיות הלכתיות מותאמות אישית."
+        explanation: "נכון מאוד! שילוב של בטיחות קלינית (מניעת סיבוכים) והנחיות הלכתיות מותאמות אישית."
       },
       {
-        answer: "איסור גורף ללא הסבר, שעלול לגרום לכך שהמטופל יצום בסתר וללא תיאום רפואי.",
+        answer: "הנחיה לצום כרגיל ללא שינוי, מתוך הנחה שקדושת יום כיפור תגן עליו מנזק בריאותי קליני",
         correct: false,
-        explanation: "איסור גורף ללא הדרכה דתית-רפואית פוגע באמון ולרוב גורם למטופלים לצום בסתר ולהסתכן."
+        explanation: "לא נכון. הלכות פיקוח נפש דוחות את חובת הצום כאשר ישנו סיכון בריאותי ממשי למטופל."
+      },
+      {
+        answer: "הוראה גורפת להפסקת כל הטיפולים התרופתיים חצי שנה מראש כדי לאפשר את הצום ללא חשש",
+        correct: false,
+        explanation: "לא נכון. הפסקת טיפול ממושכת ללא פיקוח תפגע קשות באיזון המחלה ותסכן את המטופל."
       }
-    ],
-    bridgeTitle: "הגשר לאתגר השער האחרון:",
-    bridgeText: "נעבור כעת לשער המרכזי של חדר הבקרה - אתגר הכספת האתית!"
+    ]
   },
   {
-    indexLabel: "דלת 8: אתגר הכספת - פרוטוקול הפעולה המעשי",
-    slide: "slide157.png",
+    indexLabel: "דלת 8: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
     type: "puzzle",
-    question: "אתגר שער הכספת: בחרי בדיוק את 3 הפעולות הבטוחות המהוות את פרוטוקול הפעולה המעשי והחיוני של האחות (Human-in-the-Loop) בעידן ה-AI:",
+    question: "אתגר שער הכספת: בחרי את 3 הפעולות הבטוחות המהוות את קו ההגנה האחרון של האדם (Human-in-the-Loop) בעבודה עם AI:",
     nodes: [
-      { name: "שימוש כקו הגנה אחרון המצליב נתוני AI מול נהלים רשמיים", correct: true },
+      { name: "ביצוע הצלבת מידע ותיקוף המלצות מול נהלים רשמיים וספרות מבוססת ראיות", correct: true },
       { name: "שמירה קפדנית על חיסיון מטופלים והזנת תיאורים כלליים בלבד", correct: true },
-      { name: "הטמעת עוזרים מחלקתיים מותאמים אישית (Gems) המוזנים בנהלים רשמיים", correct: true },
-      { name: "העתקה והדבקה אוטומטית של פלטי AI לתיק המטופל ללא קריאה", correct: false },
-      { name: "הסתמכות מלאה על אבחנות AI ללא בקרה אנושית", correct: false }
+      { name: "הטמעת עוזרים מחלקתיים אוטונומיים (Gems) המוזנים בנהלים רשמיים", correct: true },
+      { name: "הסתמכות מלאה ועיוורת על כל המלצת מכונה ללא בדיקה", correct: false },
+      { name: "העתקה והדבקה ישירה של פלטי AI לתיק המטופל ללא קריאה או בקרה", correct: false }
     ],
     requiredCount: 3,
-    feedbackSuccess: "הכספת נפתחה! ניווטת בהצלחה בכל 8 השלבים ושמרת על מנהיגות סיעודית אתית, הלכתית וקלינית מנצחת!",
-    feedbackFail: "מערכת נעולה. זכרי כי הסתמכות עיוורת או העתקה ישירה ללא בקרה מפרה את עקרונות הבטיחות והאחריות. נסי שוב!",
-    bridgeTitle: "הסימולציה הושלמה בהצלחה!",
-    bridgeText: "כעת תוכלי לעבור לדו\"ח הבקרה הסופי ולפאנל הסיכום של הכנס."
+    feedbackSuccess: "הכספת נפתחה! ניווטת בהצלחה בכל שערי הבקרה, האתיקה וההלכה בעידן ה-AI!",
+    feedbackFail: "מערכת נעולה. זכרי כי הסתמכות עיוורת או העתקה ישירה ללא בקרה מפרה את עקרונות הבטיחות והאחריות. נסי שוב!"
   }
 ];
 
-// Game Management State
-class Game {
-  constructor() {
-    this.stats = {
-      ai: 50,
-      ethics: 50,
-      safety: 50
-    };
-    this.currentStage = 0; // 0: Login, 1: Intro, 2..9: Questions, 10: Victory, 11: Fail
-    this.ekg = null;
-    this.soundEnabled = true;
-    this.selections = new Array(questionsData.length).fill(null);
-    this.activeSelectionActive = true;
-    this.puzzleSelections = []; // tracks selected nodes in puzzle type questions
-    
-    this.initDOM();
+// Audio Context for sound synthesis
+let audioCtx = null;
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
   }
+}
 
-  initDOM() {
-    // Event listeners
-    document.getElementById('btn-submit-passcode').addEventListener('click', () => {
-      const code = document.getElementById('passcode-input').value.trim();
-      if (code === '2026') {
-        document.getElementById('passcode-error-msg').classList.add('hidden');
-        synth.playUnlock();
-        this.currentStage = 1;
-        this.showScreen('screen-intro');
-      } else {
-        synth.playFailure();
-        document.getElementById('passcode-error-msg').classList.remove('hidden');
-        document.getElementById('passcode-input').style.borderColor = 'var(--neon-rose)';
-      }
-    });
-
-    document.getElementById('btn-start-game').addEventListener('click', () => {
-      synth.playClick();
-      this.currentStage = 2;
-      document.getElementById('game-hud').classList.remove('hidden');
-      this.showScreen('screen-rooms');
-      this.loadQuestion(0);
-      this.updateHUD();
-    });
-
-    document.getElementById('btn-restart').addEventListener('click', () => {
-      synth.playClick();
-      location.reload();
-    });
-
-    document.getElementById('btn-restart-fail').addEventListener('click', () => {
-      synth.playClick();
-      location.reload();
-    });
-
-    document.getElementById('btn-next-question').addEventListener('click', () => {
-      this.advanceStage();
-    });
-
-    document.getElementById('btn-toggle-sound').addEventListener('click', () => {
-      this.soundEnabled = !this.soundEnabled;
-      const onIcon = document.getElementById('svg-volume-on');
-      const offIcon = document.getElementById('svg-volume-off');
-      if (this.soundEnabled) {
-        onIcon.classList.remove('hidden');
-        offIcon.classList.add('hidden');
-        synth.playClick();
-      } else {
-        onIcon.classList.add('hidden');
-        offIcon.classList.remove('hidden');
-      }
-    });
-
-    // Delegated hover sound click
-    document.addEventListener('mouseover', (e) => {
-      if (e.target.closest('.door-container') || e.target.closest('.puzzle-node-btn') || e.target.closest('.btn')) {
-        if (this.soundEnabled) synth.playClack();
-      }
-    });
-
-    // EKG Initialization
-    this.ekg = new EKGMonitor('ekg-canvas');
-    this.ekg.start();
+function playSound(type) {
+  if (!state.soundEnabled) return;
+  initAudio();
+  
+  if (audioCtx.state === 'suspended') {
+    audioCtx.resume();
   }
-
-  showScreen(screenId) {
-    const screens = document.querySelectorAll('.screen');
-    screens.forEach(s => s.classList.remove('active'));
-    document.getElementById(screenId).classList.add('active');
+  
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.connect(gain);
+  gain.connect(audioCtx.destination);
+  
+  const now = audioCtx.currentTime;
+  
+  if (type === 'click') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(450, now);
+    osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+    gain.gain.setValueAtTime(0.1, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+    osc.start(now);
+    osc.stop(now + 0.08);
+  } else if (type === 'success') {
+    const notes = [261.63, 329.63, 392.00, 523.25];
+    notes.forEach((freq, i) => {
+      const o = audioCtx.createOscillator();
+      const g = audioCtx.createGain();
+      o.connect(g);
+      g.connect(audioCtx.destination);
+      o.type = 'triangle';
+      o.frequency.setValueAtTime(freq, now + i * 0.08);
+      g.gain.setValueAtTime(0.1, now + i * 0.08);
+      g.gain.linearRampToValueAtTime(0.005, now + i * 0.08 + 0.25);
+      o.start(now + i * 0.08);
+      o.stop(now + i * 0.08 + 0.25);
+    });
+  } else if (type === 'error') {
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(130, now);
+    osc.frequency.linearRampToValueAtTime(70, now + 0.3);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.3);
+  } else if (type === 'unlock') {
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(600, now);
+    osc.frequency.exponentialRampToValueAtTime(1800, now + 0.3);
+    gain.gain.setValueAtTime(0.15, now);
+    gain.gain.linearRampToValueAtTime(0.01, now + 0.3);
+    osc.start(now);
+    osc.stop(now + 0.3);
   }
+}
 
-  generateHUDDots() {
-    const container = document.getElementById('hud-dots-container');
-    container.innerHTML = '';
-    for (let i = 0; i < questionsData.length; i++) {
-      const dot = document.createElement('span');
-      dot.className = 'dot';
-      container.appendChild(dot);
+// DOM Elements
+const elements = {
+  screenLogin: document.getElementById('screen-login'),
+  screenIntro: document.getElementById('screen-intro'),
+  screenRooms: document.getElementById('screen-rooms'),
+  screenVictory: document.getElementById('screen-victory'),
+  hud: document.getElementById('game-hud'),
+  currentDoorIndicator: document.getElementById('current-door-indicator'),
+  btnToggleSound: document.getElementById('btn-toggle-sound'),
+  svgVolumeOn: document.getElementById('svg-volume-on'),
+  svgVolumeOff: document.getElementById('svg-volume-off'),
+  hudDotsContainer: document.getElementById('hud-dots-container'),
+  
+  // Game Play elements
+  questionIndexLabel: document.getElementById('question-index-label'),
+  questionText: document.getElementById('question-text'),
+  room3dContainer: document.getElementById('room-3d-container'), // The 3D Room Box
+  doorsContainer: document.getElementById('doors-container'), // The Back Wall
+  feedbackPanel: document.getElementById('feedback-panel'),
+  feedbackText: document.getElementById('feedback-text'),
+  feedbackActionArea: document.getElementById('feedback-action-area'),
+  btnNextQuestion: document.getElementById('btn-next-question'),
+  
+  // Passcode & Final Code elements
+  passcodeInput: document.getElementById('passcode-input'),
+  passcodeErrorMsg: document.getElementById('passcode-error-msg'),
+  finalCodeValue: document.getElementById('final-code-value'),
+  finalScoreText: document.getElementById('final-score-text'),
+  
+  // Transition elements
+  transitionOverlay: document.getElementById('transition-overlay'),
+
+  // General actions
+  btnSubmitPasscode: document.getElementById('btn-submit-passcode'),
+  btnStartGame: document.getElementById('btn-start-game'),
+  btnRestart: document.getElementById('btn-restart')
+};
+
+// Initialize Application
+function init() {
+  setupEventListeners();
+  generateHUDDots();
+}
+
+// Generate the 8 dots in HUD
+function generateHUDDots() {
+  elements.hudDotsContainer.innerHTML = '';
+  for (let i = 0; i < questionsData.length; i++) {
+    const dot = document.createElement('span');
+    dot.className = 'dot';
+    dot.setAttribute('data-question', i);
+    elements.hudDotsContainer.appendChild(dot);
+  }
+}
+
+// Update the HUD displays
+function updateHUD() {
+  elements.currentDoorIndicator.innerText = 'דלת ' + (state.currentQuestionIndex + 1) + ' מתוך ' + questionsData.length;
+  
+  const dots = elements.hudDotsContainer.querySelectorAll('.dot');
+  dots.forEach((dot, idx) => {
+    dot.className = 'dot';
+    if (idx === state.currentQuestionIndex) {
+      dot.classList.add('active');
+    } else if (state.selections[idx] !== null) {
+      dot.classList.add('completed');
     }
-  }
+  });
+}
 
-  updateHUD() {
-    this.generateHUDDots();
-    document.getElementById('current-door-indicator').innerText = 'דלת ' + (this.currentStage - 1) + ' מתוך ' + questionsData.length;
-    
-    const dots = document.querySelectorAll('.dot');
-    dots.forEach((dot, idx) => {
-      dot.className = 'dot';
-      let qIdx = this.currentStage - 2;
-      if (idx === qIdx) {
-        dot.classList.add('active');
-      } else if (this.selections[idx] !== null) {
-        dot.classList.add('completed');
-      }
-    });
-
-    // Update gauge bars
-    this.setProgressBar('ai-bar', this.stats.ai);
-    this.setProgressBar('ethics-bar', this.stats.ethics);
-    this.setProgressBar('safety-bar', this.stats.safety);
-
-    // Update EKG heart rate
-    let hr = 72;
-    if (this.stats.safety < 30) {
-      hr = 115;
-      if (this.soundEnabled) synth.playDanger();
-    } else if (this.stats.safety > 80) {
-      hr = 58;
-    }
-    this.ekg.setHeartRate(hr);
-  }
-
-  setProgressBar(barId, val) {
-    const bar = document.getElementById(barId);
-    bar.style.width = Math.max(0, Math.min(100, val)) + '%';
-    document.getElementById(barId.replace('-bar', '-val')).textContent = val + '%';
-    
-    if (val < 25) {
-      bar.classList.add('gauge-warning');
-    } else {
-      bar.classList.remove('gauge-warning');
-    }
-  }
-
-  loadQuestion(qIdx) {
-    const qData = questionsData[qIdx];
-    this.activeSelectionActive = true;
-    this.puzzleSelections = [];
-    
-    // Set slide image
-    const slideImg = document.getElementById('slide-img');
-    const placeholder = document.getElementById('slide-placeholder');
-    if (qData.slide) {
-      slideImg.src = 'slides_by_number/' + qData.slide;
-      slideImg.classList.remove('hidden');
-      placeholder.classList.add('hidden');
-    } else {
-      slideImg.classList.add('hidden');
-      placeholder.classList.remove('hidden');
-    }
-
-    // Set scenario text
-    document.getElementById('question-index-label').textContent = qData.indexLabel;
-    document.getElementById('question-text').textContent = qData.question;
-    
-    // Reset feedback panel
-    const feedback = document.getElementById('feedback-panel');
-    feedback.className = 'feedback-panel idles';
-    feedback.querySelector('.feedback-content').textContent = 'בחר בדלת התשובה הנכונה ביותר כדי להתקדם...';
-    document.getElementById('feedback-action-area').classList.add('hidden');
-
-    // Load layout depending on type
-    const room3d = document.getElementById('room-3d-container');
-    room3d.className = 'room-3d';
-    
-    const doorsContainer = document.getElementById('doors-container');
-    doorsContainer.innerHTML = '';
-
-    if (qData.type === 'doors') {
-      qData.doors.forEach((door, idx) => {
-        const container = document.createElement('div');
-        container.className = 'door-container';
-        container.innerHTML = `
-          <div class="door-frame"></div>
-          <div class="door-pathway-glow"><span class="door-success-seal">🔓</span></div>
-          <div class="door-card" id="door-card-${idx}">
-            <div class="door-front">
-              <div class="door-card-reader"></div>
-              <div class="door-screen">${door.answer}</div>
-            </div>
-          </div>
-        `;
-        
-        container.addEventListener('click', () => {
-          if (!this.activeSelectionActive) return;
-          this.handleDoorClick(idx, door);
-        });
-        
-        doorsContainer.appendChild(container);
-      });
-    } else if (qData.type === 'puzzle') {
-      // Create puzzle board grid in the 3D room
-      const board = document.createElement('div');
-      board.className = 'puzzle-board-container';
-      board.innerHTML = `
-        <div class="puzzle-board-header">מערכת קוד בקרה - בחרי את הרכיבים הנכונים</div>
-        <div class="puzzle-grid" id="puzzle-grid-nodes"></div>
-      `;
-      doorsContainer.appendChild(board);
+// Event Listeners Setup
+function setupEventListeners() {
+  // Passcode submit click
+  elements.btnSubmitPasscode.addEventListener('click', () => {
+    const passcode = elements.passcodeInput.value.trim();
+    if (passcode === '2026') {
+      elements.passcodeErrorMsg.classList.add('hidden');
+      playSound('unlock');
       
-      const grid = board.querySelector('#puzzle-grid-nodes');
-      qData.nodes.forEach((node, idx) => {
-        const btn = document.createElement('button');
-        btn.className = 'puzzle-node-btn';
-        btn.textContent = node.name;
-        btn.addEventListener('click', () => {
-          if (!this.activeSelectionActive) return;
-          this.handleNodeClick(btn, idx, qData);
-        });
-        grid.appendChild(btn);
-      });
-    }
-  }
-
-  handleDoorClick(idx, door) {
-    const cards = document.querySelectorAll('.door-card');
-    cards.forEach(c => c.classList.remove('selected-door'));
-    
-    const selectedCard = document.getElementById('door-card-' + idx);
-    selectedCard.classList.add('selected-door');
-    
-    this.selections[this.currentStage - 2] = idx;
-    this.updateHUD();
-    
-    synth.playClick();
-    
-    // Show next button
-    const feedback = document.getElementById('feedback-panel');
-    feedback.className = 'feedback-panel idles';
-    feedback.querySelector('.feedback-content').textContent = 'דלת נבחרה. לחצי "לפתח את הדלת" כדי לפתוח אותה ולהתקדם.';
-    document.getElementById('feedback-action-area').classList.remove('hidden');
-    document.getElementById('btn-next-question').textContent = 'לפתח את הדלת ➡️';
-  }
-
-  handleNodeClick(btn, idx, qData) {
-    synth.playClick();
-    
-    if (btn.classList.contains('selected')) {
-      btn.classList.remove('selected');
-      this.puzzleSelections = this.puzzleSelections.filter(i => i !== idx);
+      // Go to briefing screen
+      showScreen(elements.screenIntro);
     } else {
-      btn.classList.add('selected');
-      this.puzzleSelections.push(idx);
+      playSound('error');
+      elements.passcodeErrorMsg.classList.remove('hidden');
+      elements.passcodeInput.style.borderColor = 'var(--alert-neon)';
+      elements.passcodeInput.style.boxShadow = '0 0 10px var(--alert-glow)';
     }
-    
-    // Show submit button in feedback panel
-    const feedback = document.getElementById('feedback-panel');
-    feedback.className = 'feedback-panel idles';
-    feedback.querySelector('.feedback-content').textContent = `נבחרו ${this.puzzleSelections.length} מתוך ${qData.requiredCount} רכיבים. לחצי "פתח את השער" כדי לאמת.`;
-    document.getElementById('feedback-action-area').classList.remove('hidden');
-    document.getElementById('btn-next-question').textContent = 'פתח את השער ➡️';
-  }
+  });
 
-  advanceStage() {
-    if (!this.activeSelectionActive) return;
+  // Start Game click (Briefing page "התחל")
+  elements.btnStartGame.addEventListener('click', () => {
+    playSound('click');
+    showScreen(elements.screenRooms);
+    elements.hud.classList.remove('hidden');
     
-    const qIdx = this.currentStage - 2;
-    const qData = questionsData[qIdx];
+    state.currentQuestionIndex = 0;
+    state.selections.fill(null);
+    generateHUDDots();
+    loadQuestion(0);
+  });
+  
+  // Sound toggle click
+  elements.btnToggleSound.addEventListener('click', () => {
+    state.soundEnabled = !state.soundEnabled;
+    if (state.soundEnabled) {
+      elements.svgVolumeOn.classList.remove('hidden');
+      elements.svgVolumeOff.classList.add('hidden');
+      playSound('click');
+    } else {
+      elements.svgVolumeOn.classList.add('hidden');
+      elements.svgVolumeOff.classList.remove('hidden');
+    }
+  });
+
+  // Next question click (with 3D Room Box walking zoom transition)
+  elements.btnNextQuestion.addEventListener('click', () => {
+    if (!state.activeSelectionActive) return;
+    
+    const qData = questionsData[state.currentQuestionIndex];
     
     if (qData.type === 'doors') {
-      const choice = this.selections[qIdx];
-      const door = qData.doors[choice];
+      const choice = state.selections[state.currentQuestionIndex];
+      const selectedDoor = qData.doors[choice];
       
-      if (door.correct) {
-        this.stats.ai = Math.min(100, this.stats.ai + 10);
-        this.stats.ethics = Math.min(100, this.stats.ethics + 10);
-        this.stats.safety = Math.min(100, this.stats.safety + 10);
-        this.updateHUD();
-        
-        this.animateWalkthrough(choice, qData.bridgeTitle, qData.bridgeText);
-      } else {
-        // Shaking door and deducting stats
-        synth.playFailure();
-        const card = document.getElementById('door-card-' + choice);
+      if (!selectedDoor.correct) {
+        // Shaking incorrect door card and let them try again!
+        playSound('error');
+        const card = document.getElementById("door-card-" + choice);
         card.classList.add('door-locked-shake');
         setTimeout(() => card.classList.remove('door-locked-shake'), 500);
         
-        this.stats.safety = Math.max(0, this.stats.safety - 20);
-        this.stats.ethics = Math.max(0, this.stats.ethics - 15);
-        this.updateHUD();
-        
-        const feedback = document.getElementById('feedback-panel');
-        feedback.className = 'feedback-panel incorrect';
-        feedback.querySelector('.feedback-content').textContent = 'הדלת נעולה! ' + door.explanation;
-        
-        if (this.stats.safety <= 0 || this.stats.ethics <= 0) {
-          setTimeout(() => this.showFailScreen(), 1000);
-        }
+        elements.feedbackPanel.className = 'feedback-panel incorrect';
+        elements.feedbackText.innerText = selectedDoor.explanation;
+        return;
       }
+      
+      // Correct answer door - open it and advance!
+      state.activeSelectionActive = false; // Block clicks during walking animation
+      const card = document.getElementById("door-card-" + choice);
+      const container = card.parentElement;
+      
+      playSound('unlock');
+      container.classList.add('correct-unlocked');
+      card.classList.add('door-opened');
+      
+      // Zoom camera forward
+      elements.room3dContainer.classList.add("zoom-door-" + choice);
+      
+      triggerCorridorTransition();
+      
     } else if (qData.type === 'puzzle') {
-      // Validate puzzle selections
+      // Validate puzzle nodes
       let correctSelected = 0;
       let wrongSelected = 0;
       
       qData.nodes.forEach((node, idx) => {
-        const isSelected = this.puzzleSelections.includes(idx);
+        const isSelected = state.puzzleSelections.includes(idx);
         if (isSelected && node.correct) correctSelected++;
         if (isSelected && !node.correct) wrongSelected++;
       });
@@ -728,21 +403,21 @@ class Game {
       const buttons = document.querySelectorAll('.puzzle-node-btn');
       
       if (correctSelected === qData.requiredCount && wrongSelected === 0) {
-        // Success
+        // Puzzle solved!
+        state.activeSelectionActive = false; // block clicks
         buttons.forEach((btn, idx) => {
           if (qData.nodes[idx].correct) btn.classList.add('correct-glow');
         });
         
-        this.stats.ai = Math.min(100, this.stats.ai + 15);
-        this.stats.ethics = Math.min(100, this.stats.ethics + 15);
-        this.stats.safety = Math.min(100, this.stats.safety + 15);
-        this.updateHUD();
+        playSound('unlock');
+        state.selections[state.currentQuestionIndex] = 1; // mark complete in tracker
         
-        this.selections[qIdx] = 1; // Mark completed in tracker
+        // zoom forward (central zoom animation)
+        elements.room3dContainer.classList.add("zoom-door-1");
         
-        this.animateWalkthrough(1, qData.bridgeTitle, qData.bridgeText); // central door zoom animation
+        triggerCorridorTransition();
       } else {
-        // Failure
+        // Failed puzzle
         buttons.forEach((btn, idx) => {
           if (btn.classList.contains('selected')) {
             if (qData.nodes[idx].correct) {
@@ -753,114 +428,210 @@ class Game {
           }
         });
         
-        synth.playFailure();
-        this.stats.safety = Math.max(0, this.stats.safety - 20);
-        this.stats.ethics = Math.max(0, this.stats.ethics - 20);
-        this.updateHUD();
+        playSound('error');
+        elements.feedbackPanel.className = 'feedback-panel incorrect';
+        elements.feedbackText.innerText = qData.feedbackFail;
         
-        const feedback = document.getElementById('feedback-panel');
-        feedback.className = 'feedback-panel incorrect';
-        feedback.querySelector('.feedback-content').textContent = qData.feedbackFail;
-        
-        if (this.stats.safety <= 0 || this.stats.ethics <= 0) {
-          setTimeout(() => this.showFailScreen(), 1000);
-        } else {
-          // Allow reset after a short delay
-          setTimeout(() => {
-            buttons.forEach(btn => btn.className = 'puzzle-node-btn');
-            this.puzzleSelections = [];
-          }, 2000);
-        }
+        // Reset selections after a short delay
+        setTimeout(() => {
+          buttons.forEach(btn => btn.className = 'puzzle-node-btn');
+          state.puzzleSelections = [];
+          elements.feedbackPanel.className = 'feedback-panel idles';
+          elements.feedbackText.innerText = `נבחרו 0 מתוך ${qData.requiredCount} רכיבים. בחרי את הרכיבים הנכונים ולחצי "אמת קוד".`;
+        }, 2200);
       }
     }
-  }
+  });
 
-  animateWalkthrough(choiceIdx, bridgeTitle, bridgeText) {
-    this.activeSelectionActive = false; // block clicks
-    
-    // swing door open
-    synth.playUnlock();
-    const card = document.getElementById('door-card-' + choiceIdx);
-    if (card) {
-      card.parentElement.classList.add('correct-unlocked');
-      card.classList.add('door-opened');
+  // Restart click
+  elements.btnRestart.addEventListener('click', () => {
+    playSound('click');
+    location.reload();
+  });
+}
+
+function triggerCorridorTransition() {
+  const transitionImages = [
+    'clinic_corridor.png',
+    'clinic_reception.png',
+    'clinic_lab.png',
+    'clinic_scanner.png',
+    'clinic_server.png',
+    'clinic_icu.png',
+    'clinic_gate.png',
+    'clinic_vault.png'
+  ];
+  
+  const nextImg = transitionImages[state.currentQuestionIndex % transitionImages.length];
+  const bgElement = elements.transitionOverlay.querySelector('.transition-bg');
+  if (bgElement) {
+    bgElement.style.backgroundImage = "url('" + nextImg + "')";
+  }
+  
+  // Show full-screen corridor transition
+  setTimeout(() => {
+    elements.transitionOverlay.classList.remove('hidden');
+    elements.transitionOverlay.classList.add('active');
+  }, 300);
+  
+  setTimeout(() => {
+    const nextIndex = state.currentQuestionIndex + 1;
+    if (nextIndex < questionsData.length) {
+      loadQuestion(nextIndex);
+      
+      // emerging walk-out effect in next room
+      elements.room3dContainer.className = 'room-3d fade-enter';
+      elements.room3dContainer.offsetHeight; // Force reflow
+      elements.room3dContainer.classList.remove('fade-enter');
+      
+      elements.transitionOverlay.classList.remove('active');
+      setTimeout(() => {
+        elements.transitionOverlay.classList.add('hidden');
+        state.activeSelectionActive = true;
+      }, 400);
+    } else {
+      // Game victory!
+      elements.transitionOverlay.classList.remove('active');
+      setTimeout(() => {
+        elements.transitionOverlay.classList.add('hidden');
+        showScreen(elements.screenVictory);
+        elements.hud.classList.add('hidden');
+        playSound('success');
+        state.activeSelectionActive = true;
+      }, 400);
     }
-    
-    // Zoom/walk forward
-    const room3d = document.getElementById('room-3d-container');
-    room3d.classList.add('zoom-door-' + choiceIdx);
-    
-    // Show full-screen portal transition overlay
-    const overlay = document.getElementById('transition-overlay');
-    const bg = overlay.querySelector('.transition-bg');
-    
-    const transitionImages = [
-      'clinic_corridor.png',
-      'clinic_reception.png',
-      'clinic_lab.png',
-      'clinic_scanner.png',
-      'clinic_server.png',
-      'clinic_icu.png',
-      'clinic_gate.png',
-      'clinic_vault.png'
-    ];
-    
-    const nextImg = transitionImages[(this.currentStage - 2) % transitionImages.length];
-    bg.style.backgroundImage = `url('${nextImg}')`;
-    
-    setTimeout(() => {
-      overlay.classList.add('active');
-    }, 300);
+  }, 1400);
+}
 
-    setTimeout(() => {
-      const nextIndex = this.currentStage - 2 + 1;
-      if (nextIndex < questionsData.length) {
-        this.currentStage++;
-        this.loadQuestion(nextIndex);
-        this.updateHUD();
-        
-        // emerging walk-out transition
-        room3d.className = 'room-3d fade-enter';
-        room3d.offsetHeight; // Force reflow
-        room3d.classList.remove('fade-enter');
-        
-        overlay.classList.remove('active');
-        this.activeSelectionActive = true;
-      } else {
-        // Victory!
-        overlay.classList.remove('active');
-        this.currentStage = 10;
-        this.showWinScreen();
-        this.activeSelectionActive = true;
-      }
-    }, 1400);
-  }
+// Navigation helper
+function showScreen(screen) {
+  elements.screenLogin.classList.add('hidden');
+  elements.screenLogin.classList.remove('active');
+  elements.screenIntro.classList.add('hidden');
+  elements.screenIntro.classList.remove('active');
+  elements.screenRooms.classList.add('hidden');
+  elements.screenRooms.classList.remove('active');
+  elements.screenVictory.classList.add('hidden');
+  elements.screenVictory.classList.remove('active');
+  
+  screen.classList.remove('hidden');
+  screen.classList.add('active');
+}
 
-  showWinScreen() {
-    this.showScreen('screen-victory');
-    document.getElementById('game-hud').classList.add('hidden');
-    synth.playSuccess();
+// Load a Question into the view
+function loadQuestion(index) {
+  state.currentQuestionIndex = index;
+  state.activeSelectionActive = true;
+  state.puzzleSelections = [];
+  updateHUD();
+  
+  // Reset room box container class
+  elements.room3dContainer.className = 'room-3d';
+  
+  const qData = questionsData[index];
+  
+  elements.questionIndexLabel.innerText = qData.indexLabel;
+  elements.questionText.innerText = qData.question;
+  
+  // Reset feedback panel
+  elements.feedbackPanel.className = 'feedback-panel idles';
+  
+  if (qData.type === 'doors') {
+    elements.feedbackText.innerText = "בחר בדלת בעלת התשובה הנכונה ביותר...";
+    elements.feedbackActionArea.classList.add('hidden');
     
-    // Determine final code
-    let finalCode = "HUMAN IN THE LOOP";
-    document.getElementById('final-code-value').innerText = finalCode;
+    // Render doors
+    elements.doorsContainer.innerHTML = '';
     
-    // EKG normal rhythm
-    this.ekg.setHeartRate(60);
-    this.ekg.setDead(false);
-  }
-
-  showFailScreen() {
-    this.showScreen('screen-fail');
-    document.getElementById('game-hud').classList.add('hidden');
-    synth.playFailure();
+    qData.doors.forEach((door, idx) => {
+      const container = document.createElement('div');
+      container.className = 'door-container';
+      
+      container.innerHTML = '<div class="door-frame"></div>' +
+          '<div class="door-pathway-glow">🔓</div>' +
+          '<div class="door-card" id="door-card-' + idx + '">' +
+            '<div class="door-front">' +
+              '<div class="door-card-reader"></div>' +
+              '<div class="door-screen">' + door.answer + '</div>' +
+            '</div>' +
+          '</div>';
+      
+      container.addEventListener('click', () => {
+        if (!state.activeSelectionActive) return;
+        handleDoorSelection(idx, door);
+      });
+      
+      elements.doorsContainer.appendChild(container);
+    });
+  } else if (qData.type === 'puzzle') {
+    elements.feedbackText.innerText = `נבחרו 0 מתוך ${qData.requiredCount} רכיבים. בחרי את הרכיבים הנכונים ולחצי "אמת קוד".`;
+    elements.feedbackActionArea.classList.remove('hidden');
+    elements.btnNextQuestion.innerText = 'אמת קוד ➡️';
     
-    // Flatline EKG
-    this.ekg.setDead(true);
+    // Render puzzle board inside the 3D room
+    elements.doorsContainer.innerHTML = '';
+    
+    const board = document.createElement('div');
+    board.className = 'puzzle-board-container';
+    board.innerHTML = `
+      <div class="puzzle-board-header">מערכת קוד בקרה - בחרי את הרכיבים הנכונים</div>
+      <div class="puzzle-grid" id="puzzle-grid-nodes"></div>
+    `;
+    elements.doorsContainer.appendChild(board);
+    
+    const grid = board.querySelector('#puzzle-grid-nodes');
+    
+    qData.nodes.forEach((node, idx) => {
+      const btn = document.createElement('button');
+      btn.className = 'puzzle-node-btn';
+      btn.textContent = node.name;
+      
+      btn.addEventListener('click', () => {
+        if (!state.activeSelectionActive) return;
+        handleNodeSelection(btn, idx, qData);
+      });
+      
+      grid.appendChild(btn);
+    });
   }
 }
 
-// Auto start game engine
+// Handle clicking a door
+function handleDoorSelection(doorIdx, doorData) {
+  const cards = elements.doorsContainer.querySelectorAll('.door-card');
+  cards.forEach(c => c.classList.remove('selected-door'));
+  
+  const card = document.getElementById("door-card-" + doorIdx);
+  card.classList.add('selected-door');
+  
+  state.selections[state.currentQuestionIndex] = doorIdx;
+  updateHUD();
+  
+  playSound('click');
+  
+  elements.feedbackPanel.className = 'feedback-panel idles';
+  elements.feedbackText.innerText = 'דלת נבחרה. לחץ \"לפתח את הדלת\" כדי לפתוח אותה ולהתקדם.';
+  elements.feedbackActionArea.classList.remove('hidden');
+  elements.btnNextQuestion.innerText = 'לפתח את הדלת ➡️';
+}
+
+// Handle clicking a puzzle node
+function handleNodeSelection(btn, nodeIdx, qData) {
+  playSound('click');
+  
+  if (btn.classList.contains('selected')) {
+    btn.classList.remove('selected');
+    state.puzzleSelections = state.puzzleSelections.filter(i => i !== nodeIdx);
+  } else {
+    btn.classList.add('selected');
+    state.puzzleSelections.push(nodeIdx);
+  }
+  
+  elements.feedbackPanel.className = 'feedback-panel idles';
+  elements.feedbackText.innerText = `נבחרו ${state.puzzleSelections.length} מתוך ${qData.requiredCount} רכיבים. בחרי את הרכיבים הנכונים ולחצי "אמת קוד".`;
+}
+
+// Auto start
 window.addEventListener('DOMContentLoaded', () => {
-  window.gameEngine = new Game();
+  init();
 });
