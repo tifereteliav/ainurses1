@@ -7,7 +7,7 @@ const state = {
   puzzleSelections: [] // tracks selected node indices for puzzle questions
 };
 
-// 8 Questions Database (shuffled correctness, mixed nodes for Q7, new Anthropic Q5)
+// 8 Questions Database (shuffled correctness, mixed nodes for Q7 & Q8, final terminology update)
 const questionsData = [
   {
     indexLabel: "דלת 1: חזון הרמב\"ם (המאה ה-12)",
@@ -160,13 +160,13 @@ const questionsData = [
   {
     indexLabel: "דלת 8: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
     type: "puzzle",
-    question: "אתגר שער הכספת: בחרו את 3 הפעולות הבטוחות המהוות את קו ההגנה האחרון של האדם (Human-in-the-Loop) בעבודה עם AI:",
+    question: "אתגר שער הכספת: בחרו את 3 הפעולות שבהן האחים והאחיות מהווים את קו ההגנה האחרון (Human-in-the-Loop) בעבודה עם AI:",
     nodes: [
       { name: "ביצוע הצלבת מידע ותיקוף המלצות מול נהלים רשמיים וספרות מבוססת ראיות", correct: true },
-      { name: "שמירה קפדנית על חיסיון מטופלים והזנת תיאורים כלליים בלבד", correct: true },
-      { name: "הטמעת עוזרים מחלקתיים אוטונומיים (Gems) המוזנים בנהלים רשמיים", correct: true },
       { name: "הסתמכות מלאה ועיוורת על כל המלצת מכונה ללא בדיקה", correct: false },
-      { name: "העתקה והדבקה ישירה של פלטי AI לתיק המטופל ללא קריאה או בקרה", correct: false }
+      { name: "שמירה קפדנית על חיסיון מטופלים והזנת תיאורים כלליים בלבד", correct: true },
+      { name: "העתקה והדבקה ישירה של פלטי AI לתיק המטופל ללא קריאה או בקרה", correct: false },
+      { name: "הטמעת עוזרים מחלקתיים אוטונומיים (Gems) המוזנים בנהלים רשמיים", correct: true }
     ],
     requiredCount: 3,
     feedbackSuccess: "הכספת נפתחה! ניווטתם בהצלחה בכל שערי הבקרה, האתיקה וההלכה בעידן ה-AI!",
