@@ -813,8 +813,8 @@ body {
   display: flex;
   flex-direction: column;
   padding: 15px;
-  transform: translateZ(-250px);
-  z-index: 2;
+  transform: translateZ(5px);
+  z-index: 5;
   direction: rtl;
   color: #fff;
 }
