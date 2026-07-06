@@ -2,12 +2,12 @@
 const state = {
   currentQuestionIndex: 0,
   soundEnabled: true,
-  selections: new Array(6).fill(null), // tracks chosen door index (0, 1, 2) for each question (6 questions now)
+  selections: new Array(5).fill(null), // tracks chosen door index (0, 1, 2) for each question (5 questions now)
   activeSelectionActive: true,
   puzzleSelections: [] // tracks selected node indices for puzzle questions
 };
 
-// 6 Questions Database (shuffled correctness, mixed nodes for Q5 & Q6, final terminology update)
+// 5 Questions Database (shuffled correctness, mixed nodes for Q4 & Q5, final terminology update)
 const questionsData = [
   {
     indexLabel: "דלת 1: טעות הסוסים (שנת 1900)",
@@ -76,29 +76,7 @@ const questionsData = [
     ]
   },
   {
-    indexLabel: "דלת 4: סייבר ומערכת הבריאות בישראל (יוני 2026)",
-    type: "doors",
-    question: "על רקע עלייה באיומי סייבר ביוני 2026, מהי ההנחיה המיידית של משרד הבריאות לגבי שימוש ב-AI?",
-    doors: [
-      {
-        answer: "חסימה מוחלטת של גישה לכלי AI חיצוניים ממחשבי בתי החולים הממשלתיים, והגבלת השימוש למכשירים אישיים בלבד",
-        correct: true,
-        explanation: "נכון מאוד! הנחיית החירום באה למנוע זליגת מידע רגיש ופרצות אבטחה ברשתות בתי החולים."
-      },
-      {
-        answer: "פתיחת גישה מלאה ומהירה ללא סיסמה לכל מודלי השפה של Anthropic ו-OpenAI ממחשבי המחלקה",
-        correct: false,
-        explanation: "לא נכון. משרד הבריאות חסם את הכלים לחלוטין ברשתות הפנימיות בשל סיכוני אבטחת מידע."
-      },
-      {
-        answer: "איסור גורף על שימוש בבינה מלאכותית גם במכשירים אישיים לכלל הרופאים והאחיות בארץ",
-        correct: false,
-        explanation: "לא נכון. השימוש מותר במכשירים אישיים, אך חל איסור מוחלט להזין פרטים מזהים של מטופלים."
-      }
-    ]
-  },
-  {
-    indexLabel: "דלת 5: פרוטוקול הפרומפט הקליני המובנה",
+    indexLabel: "דלת 4: פרוטוקול הפרומפט הקליני המובנה",
     type: "puzzle",
     question: "אתגר שער הבקרה: בחרו את 4 המרכיבים ההכרחיים (לפי חוקי הפרומפטולוגיה הקלינית) לבניית פנייה ביקורתית ומובנית ל-AI:",
     nodes: [
@@ -114,7 +92,7 @@ const questionsData = [
     feedbackFail: "קוד שגוי. הזנת פרטים מזהים מפרה חיסיון, וברכות נימוסין אינן רכיב הכרחי ליציבות הפלט. נסו שוב!"
   },
   {
-    indexLabel: "דלת 6: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
+    indexLabel: "דלת 5: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
     type: "puzzle",
     question: "אתגר שער הכספת: בחרו את 3 הפעולות שבהן האחים והאחיות מהווים את קו ההגנה האחרון (Human-in-the-Loop) בעבודה עם AI:",
     nodes: [
