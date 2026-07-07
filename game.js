@@ -2,12 +2,12 @@
 const state = {
   currentQuestionIndex: 0,
   soundEnabled: true,
-  selections: new Array(5).fill(null), // tracks chosen door index (0, 1, 2) for each question (5 questions now)
+  selections: new Array(4).fill(null), // tracks chosen door index (0, 1, 2) for each question (4 questions now)
   activeSelectionActive: true,
   puzzleSelections: [] // tracks selected node indices for puzzle questions
 };
 
-// 5 Questions Database (shuffled correctness, mixed nodes for Q4 & Q5, final terminology update)
+// 4 Questions Database (shuffled correctness, mixed nodes for Q4, final terminology update)
 const questionsData = [
   {
     indexLabel: "דלת 1: טעות הסוסים (שנת 1900)",
@@ -76,23 +76,7 @@ const questionsData = [
     ]
   },
   {
-    indexLabel: "דלת 4: פרוטוקול הפרומפט הקליני המובנה",
-    type: "puzzle",
-    question: "אתגר שער הבקרה: בחרו את 4 המרכיבים ההכרחיים (לפי חוקי הפרומפטולוגיה הקלינית) לבניית פנייה ביקורתית ומובנית ל-AI:",
-    nodes: [
-      { name: "הגדרת תפקיד המערכת (Role)", correct: true },
-      { name: "פרטים מזהים של המטופל (שם מלא, ת.ז)", correct: false },
-      { name: "הגדרת המשימה הקלינית (Task)", correct: true },
-      { name: "ברכת נימוסין ממושכת למחשב", correct: false },
-      { name: "הקשר רפואי מלא ללא פרטים מזהים (Context)", correct: true },
-      { name: "קביעת מבנה הפלט הרצוי (Format)", correct: true }
-    ],
-    requiredCount: 4,
-    feedbackSuccess: "קוד הפרומפט זוהה! ROLE, TASK, CONTEXT, FORMAT - שילוב מנצח ללא הפרת חיסיון המטופל. השער נפתח!",
-    feedbackFail: "קוד שגוי. הזנת פרטים מזהים מפרה חיסיון, וברכות נימוסין אינן רכיב הכרחי ליציבות הפלט. נסו שוב!"
-  },
-  {
-    indexLabel: "דלת 5: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
+    indexLabel: "דלת 4: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
     type: "puzzle",
     question: "אתגר שער הכספת: בחרו את 3 הפעולות שבהן האחים והאחיות מהווים את קו ההגנה האחרון (Human-in-the-Loop) בעבודה עם AI:",
     nodes: [
