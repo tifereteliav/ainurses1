@@ -2,37 +2,15 @@
 const state = {
   currentQuestionIndex: 0,
   soundEnabled: true,
-  selections: new Array(4).fill(null), // tracks chosen door index (0, 1, 2) for each question (4 questions now)
+  selections: new Array(3).fill(null), // tracks chosen door index (0, 1, 2) for each question (3 questions now)
   activeSelectionActive: true,
   puzzleSelections: [] // tracks selected node indices for puzzle questions
 };
 
-// 4 Questions Database (shuffled correctness, mixed nodes for Q4, final terminology update)
+// 3 Questions Database (shuffled correctness, mixed nodes for Q3, final terminology update)
 const questionsData = [
   {
-    indexLabel: "דלת 1: טעות הסוסים (שנת 1900)",
-    type: "doors",
-    question: "מהי \"טעות הסוסים\" בהיסטוריה של המהפכות הטכנולוגיות וכיצד היא מתקשרת למהפכת ה-AI?",
-    doors: [
-      {
-        answer: "האמונה כי סוסים מהירים יותר ממנועים ראשוניים, מה שעיכב את כניסת המהפכה התעשייתית לתחבורה",
-        correct: false,
-        explanation: "לא נכון. זהו סיפור הממחיש את סכנת החלפת כוח העבודה האנושי (המוח) על ידי המחשב."
-      },
-      {
-        answer: "ההערכה השגויה לגבי מספר הסוסים שיידרשו להובלת משאות בערים בעקבות המצאת הרכבת והמכונית",
-        correct: false,
-        explanation: "לא נכון. הטעות היא חוסר ההבנה שטכנולוגיה חדשה (מנוע) יכולה להחליף לחלוטין את העובד (הסוס) ולא רק לעזור לו."
-      },
-      {
-        answer: "ההנחה שכלים חדשים רק משפרים את פריון השריר, בעוד ה-AI מחליף את המוח האנושי כפי שהמנוע החליף כליל את הסוסים והביא לצניחתם",
-        correct: true,
-        explanation: "נכון מאוד! ה-AI הוא מהפכה קוגניטיבית המיועדת להחליף את המוח ולא רק לשפר את השריר."
-      }
-    ]
-  },
-  {
-    indexLabel: "דלת 2: מהפכת 2025 ודו\"ח מיקרוסופט",
+    indexLabel: "דלת 1: מהפכת 2025 ודו\"ח מיקרוסופט",
     type: "doors",
     question: "על פי דו\"ח מיקרוסופט (Working with AI, אוגוסט 2025), כיצד מדרג מדד ה-AI Applicability Score את מקצועות שוק העבודה?",
     doors: [
@@ -54,7 +32,7 @@ const questionsData = [
     ]
   },
   {
-    indexLabel: "דלת 3: דו\"ח אנתרופיק (מרץ 2026)",
+    indexLabel: "דלת 2: דו\"ח אנתרופיק (מרץ 2026)",
     type: "doors",
     question: "על פי דו\"ח אנתרופיק ממרץ 2026, מהו הממצא המרכזי בנוגע לשימוש ב-AI בפועל לעומת יכולות המכונה במקצועות הבריאות?",
     doors: [
@@ -76,7 +54,7 @@ const questionsData = [
     ]
   },
   {
-    indexLabel: "דלת 4: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
+    indexLabel: "דלת 3: פרוטוקול פעולה מעשי (Human-in-the-Loop)",
     type: "puzzle",
     question: "אתגר שער הכספת: בחרו את 3 הפעולות שבהן האחים והאחיות מהווים את קו ההגנה האחרון (Human-in-the-Loop) בעבודה עם AI:",
     nodes: [
